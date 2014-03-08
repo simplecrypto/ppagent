@@ -16,9 +16,13 @@ logger = logging.getLogger("ppagent")
 config_home = expanduser("~/.ppagent/")
 
 ch = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter('[%(levelname)s] %(message)s')
+formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+
+
+class WorkerNotFound(Exception):
+    pass
 
 
 miner_defaults = {
@@ -64,16 +68,19 @@ class CGMiner(Miner):
         # filter our disabled collectors
         self.collectors = {k: v for (k, v) in collectors.items()
                            if v.get('enabled', False)}
-        now = int(time.time())
-        for coll in self.collectors.values():
-            interval = coll['interval']
-            coll['next_run'] = ((now // interval) * interval)
 
         self._worker = None
+        self.queue = []
         self.authenticated = False
 
     def test(self):
         pass
+
+    def reset_timers(self):
+        now = int(time.time())
+        for coll in self.collectors.values():
+            interval = coll['interval']
+            coll['next_run'] = ((now // interval) * interval)
 
     @property
     def worker(self):
@@ -82,25 +89,29 @@ class CGMiner(Miner):
         return self._worker
 
     def collect(self):
-        ret = []
+        # trim queue to keep it from growing infinitely while disconnected
+        self.queue = self.queue[:10]
+
         now = int(time.time())
         # if it's time to run, and we have status defined
         if 'status' in self.collectors and now >= self.collectors['status']['next_run']:
             conf = self.collectors['status']
             string = ""
-            mhs, temps = self.call_devs()
+            ret = self.call_devs()
+            # if it failed to connect we should just skip collection
+            if ret is None:
+                return
+            mhs, temps = ret
             if conf['temperature']:
                 for i, temp in enumerate(temps):
                     string += "GPU {} Temp: {}C\n".format(i, temp)
             if conf['mhps']:
                 for i, mh in enumerate(mhs):
                     string += "GPU {} 5s: {} MH/s\n".format(i, mh)
-            ret.append([self.worker, 'status', string])
+            self.queue.append([self.worker, 'status', string])
 
             # set the next time it should run
             conf['next_run'] += conf['interval']
-
-        return ret
 
     def call(self, command, params=None):
         sok = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -109,6 +120,10 @@ class CGMiner(Miner):
             sok.send('{"command":"' + command + '"}')
             data = sok.makefile().readline()[:-1]
             retval = json.loads(data)
+        except socket.error:
+            self._worker = None
+            self.authenticated = False
+            return None
         finally:
             sok.close()
         return retval
@@ -118,7 +133,7 @@ class CGMiner(Miner):
         for pool in data['POOLS']:
             if pool['Stratum URL'] in self.remotes:
                 return pool['User']
-        raise Exception("Unable to find worker in pool connections")
+        raise WorkerNotFound("Unable to find worker in pool connections")
 
     def call_devs(self):
         data = self.call('devs')
@@ -136,28 +151,42 @@ class AgentSender(object):
         self.address = address
         self.port = port
         self.miners = miners
-        self._conn = None
+        self.conn = None
 
-    @property
-    def conn(self):
-        if self._conn is None:
-            logger.debug("Opening connection to agent server...")
-            conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            conn.connect((self.address, self.port))
-            self._conn = conn.makefile()
-            self.send({'method': 'hello', 'params': [0.1]})
-        return self._conn
+    def connect(self):
+        logger.debug("Opening connection to agent server...")
+        conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        conn.connect((self.address, self.port))
+        self.conn = conn.makefile()
+        self.conn.write(json.dumps({'method': 'hello', 'params': [0.1]}) + "\n")
+        self.conn.flush()
+
+    def reset_connection(self):
+        logger.info("Disconnected from remote.")
+        self.conn = None
+        # reauth required upon connection error
+        for miner in self.miners:
+            miner.authenticated = False
 
     def send(self, data):
-        self.conn.write(json.dumps(data) + "\n")
-        self.conn.flush()
         logger.debug("Sending {} to server".format(data))
+        try:
+            if self.conn is None:
+                self.connect()
+            self.conn.write(json.dumps(data) + "\n")
+            self.conn.flush()
+        except (socket.error, Exception):
+            self.reset_connection()
+            raise
 
     def recieve(self):
         recv = self.conn.readline(4096)
         if len(recv) > 4000:
             raise Exception("Server returned too large of a string")
         logger.debug("Recieved response from server {}".format(recv.strip()))
+        if not recv:
+            self.reset_connection()
+            return None
         return json.loads(recv)
 
     def loop(self):
@@ -170,49 +199,66 @@ class AgentSender(object):
 
     def transmit(self):
         # accumulate values to send
-        values = []
         for miner in self.miners:
             if miner.authenticated is False:
                 try:
                     username = miner.worker
+                except WorkerNotFound:
+                    logger.info("Miner not connected to valid pool")
+                    continue
                 except Exception:
-                    logger.info("Unable to extract worker information from miner")
+                    logger.info("Unable to connect to miner")
                     continue
 
                 logger.debug("Attempting to authenticate {}".format(username))
                 data = {'method': 'worker.authenticate',
                         'params': [username, ]}
-                self.send(data)
-                # success
+                try:
+                    self.send(data)
+                except Exception:
+                    logger.debug("Failed to communicate with server")
+                    time.sleep(5)
+                    continue
+
                 retval = self.recieve()
                 if retval['error'] is None:
-                    logger.debug("Successfully authenticated {}".format(username))
+                    logger.info("Successfully authenticated {}".format(username))
                     miner.authenticated = True
+                    miner.reset_timers()
                 else:
-                    logger.debug("Failed to authenticate {}, server returned {}."
-                                 .format(username, retval))
+                    logger.debug(
+                        "Failed to authenticate worker {}, server returned {}."
+                        .format(username, retval))
 
             if miner.authenticated is True:
-                values.extend(miner.collect())
-
-        logger.debug("Collected following list for transmission: {}"
-                     .format(values))
-
-        # send all our values that were accumulated
-        sent = []
-        for i, value in enumerate(values):
-            try:
-                send = {'method': 'stats.submit', 'params': value}
-                logger.info("Transmiting new stats: {}".format(send))
-                self.send(send)
-            except Exception:
-                logging.warn("Unable to send!", exc_info=True)
+                miner.collect()
             else:
-                sent.append(i)
+                # don't distribute if we're not authenticated...
+                continue
 
-        # remove the successfully sent values
-        for i in sent:
-            del values[i]
+            # send all our values that were accumulated
+            sent = []
+            for i, value in enumerate(miner.queue):
+                try:
+                    send = {'method': 'stats.submit', 'params': value}
+                    logger.info("Transmiting new stats: {}".format(send))
+                    self.send(send)
+                except Exception:
+                    logger.warn(
+                        "Unable to send to remote, probably down temporarily.")
+                    time.sleep(5)
+                else:
+                    # try to get a response from the server. if we fail to
+                    # recieve, just wait till next loop to send
+                    ret = self.recieve()
+                    if ret is None or ret.get('error', True) is not None:
+                        logger.warn("Recieved failure result from the server!")
+                    else:
+                        sent.append(i)
+
+            # remove the successfully sent values
+            for i in sent:
+                del miner.queue[i]
 
 
 def entry():
