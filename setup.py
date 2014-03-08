@@ -12,7 +12,7 @@ setup(name='ppagent',
       packages=find_packages(),
       entry_points={
           'console_scripts': [
-              'ppagent = poweragent.main:entry'
+              'ppagent = ppagent.main:entry'
           ]
       }
       )
