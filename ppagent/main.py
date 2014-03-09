@@ -94,21 +94,25 @@ class CGMiner(Miner):
 
         now = int(time.time())
         # if it's time to run, and we have status defined
+        if ('status' in self.collectors or
+                'temp' in self.collectors or
+                'hashrate' in self.collectors):
+            ret = self.call_devs()
+            mhs, temps = ret
+
         if 'status' in self.collectors and now >= self.collectors['status']['next_run']:
             conf = self.collectors['status']
             string = ""
-            ret = self.call_devs()
             # if it failed to connect we should just skip collection
             if ret is None:
                 return
-            mhs, temps = ret
             if conf['temperature']:
                 for i, temp in enumerate(temps):
                     string += "GPU {} Temp: {}C\n".format(i, temp)
             if conf['mhps']:
                 for i, mh in enumerate(mhs):
                     string += "GPU {} 5s: {} MH/s\n".format(i, mh)
-            self.queue.append([self.worker, 'status', string])
+            self.queue.append([self.worker, 'status', string, int(time.time())])
 
             # set the next time it should run
             conf['next_run'] += conf['interval']
