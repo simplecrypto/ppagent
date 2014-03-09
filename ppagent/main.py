@@ -8,7 +8,6 @@ import collections
 import yaml
 import time
 
-from pprint import pformat
 from os.path import expanduser
 
 
@@ -34,6 +33,14 @@ miner_defaults = {
                 'enabled': True,
                 'temperature': True,
                 'mhps': True,
+                'interval': 60
+            },
+            'temp': {
+                'enabled': True,
+                'interval': 60
+            },
+            'hashrate': {
+                'enabled': True,
                 'interval': 60
             }
         }
@@ -72,6 +79,7 @@ class CGMiner(Miner):
         self._worker = None
         self.queue = []
         self.authenticated = False
+        self.last_devs = []
 
     def test(self):
         pass
@@ -102,17 +110,33 @@ class CGMiner(Miner):
 
         if 'status' in self.collectors and now >= self.collectors['status']['next_run']:
             conf = self.collectors['status']
-            string = ""
+            gpus = [{} for _ in temps]
+            output = {"type": "cgminer", "gpus": gpus}
             # if it failed to connect we should just skip collection
             if ret is None:
                 return
             if conf['temperature']:
                 for i, temp in enumerate(temps):
-                    string += "GPU {} Temp: {}C\n".format(i, temp)
+                    output['gpus'][i]['temp'] = temp
             if conf['mhps']:
                 for i, mh in enumerate(mhs):
-                    string += "GPU {} 5s: {} MH/s\n".format(i, mh)
-            self.queue.append([self.worker, 'status', string, int(time.time())])
+                    output['gpus'][i]['hash'] = mh
+            self.queue.append([self.worker, 'status', output, now])
+
+            # set the next time it should run
+            conf['next_run'] += conf['interval']
+
+        if 'temp' in self.collectors and now >= self.collectors['temp']['next_run']:
+            conf = self.collectors['temp']
+            self.queue.append([self.worker, 'temp', temps, now])
+
+            # set the next time it should run
+            conf['next_run'] += conf['interval']
+
+        if (mhs and 'hashrate' in self.collectors and
+                now >= self.collectors['hashrate']['next_run']):
+            conf = self.collectors['hashrate']
+            self.queue.append([self.worker, 'hashrate', mhs, now])
 
             # set the next time it should run
             conf['next_run'] += conf['interval']
@@ -140,12 +164,21 @@ class CGMiner(Miner):
         raise WorkerNotFound("Unable to find worker in pool connections")
 
     def call_devs(self):
+        """ Retrieves and parses device information from cgminer """
         data = self.call('devs')
         if 'DEVS' not in data:
             raise Exception()
 
         temps = [d.get('Temperature') for d in data['DEVS']]
-        mhs = [d.get('MHS 5s') for d in data['DEVS']]
+        # we store the last total megahashes internally and report the
+        # difference since last run, as opposed to reporting cgminers avg
+        # megahash or 5s megahash
+        if self.last_devs and len(self.last_devs) == len(data['DEVS']):
+            mhs = [round(now['Total MH'] - last['Total MH'], 3)
+                   for now, last in zip(data['DEVS'], self.last_devs)]
+        else:
+            mhs = []
+        self.last_devs = data['DEVS']
         return mhs, temps
 
 
@@ -241,8 +274,8 @@ class AgentSender(object):
                 continue
 
             # send all our values that were accumulated
-            sent = []
-            for i, value in enumerate(miner.queue):
+            remaining = []
+            for value in miner.queue:
                 try:
                     send = {'method': 'stats.submit', 'params': value}
                     logger.info("Transmiting new stats: {}".format(send))
@@ -257,12 +290,8 @@ class AgentSender(object):
                     ret = self.recieve()
                     if ret is None or ret.get('error', True) is not None:
                         logger.warn("Recieved failure result from the server!")
-                    else:
-                        sent.append(i)
-
-            # remove the successfully sent values
-            for i in sent:
-                del miner.queue[i]
+                        remaining.append(value)
+            miner.queue[:] = remaining
 
 
 def entry():
