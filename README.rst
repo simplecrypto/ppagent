@@ -12,6 +12,7 @@ Dependencies
 Installing
 ^^^^^^^^^^
 
-- pip install ppagent
-- ppagent install
+NOTE: Currently we're in the process of writing a really user friendly
+installer, so just hang tight for a bit and we'll have it ready.
 
+- pip install ppagent
