@@ -9,8 +9,8 @@ Installation
 ^^^^^^^^^^^^
 
 Make sure your cgminer or sgminer is running with the api port enabled. This
-can be done on command line with the ``--api-allow`` argument, or in your
-configuration file with ``"api-allow": true``.
+can be done on command line with the ``--api-listen`` argument, or in your
+configuration file with ``"api-listen": true``.
 
 Ubuntu:
 
