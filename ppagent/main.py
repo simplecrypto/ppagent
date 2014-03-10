@@ -5,11 +5,17 @@ import os
 import logging
 import sys
 import collections
-import yaml
 import time
 
 from os.path import expanduser
 
+
+def excepthook(type, value, traceback):
+    print 'Unhandled exception'
+    print 'Type:', type
+    print 'Value:', value
+    print 'Traceback:', traceback
+sys.excepthook = excepthook
 
 logger = logging.getLogger("ppagent")
 config_home = expanduser("~/.ppagent/")
@@ -18,6 +24,14 @@ ch = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+
+default_config = '''[
+    {"miner":
+        {
+            "type": "CGMiner"
+        }
+    }
+]'''
 
 
 class WorkerNotFound(Exception):
@@ -191,10 +205,12 @@ class AgentSender(object):
         self.conn = None
 
     def connect(self):
-        logger.debug("Opening connection to agent server...")
+        logger.debug("Opening connection to agent server; addr: {}; port: {}"
+                     .format(self.address, self.port))
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         conn.connect((self.address, self.port))
         self.conn = conn.makefile()
+        logger.debug("Announcing hello message")
         self.conn.write(json.dumps({'method': 'hello', 'params': [0.1]}) + "\n")
         self.conn.flush()
 
@@ -217,13 +233,16 @@ class AgentSender(object):
             raise
 
     def recieve(self):
+        if self.conn is None:
+            return {}
+
         recv = self.conn.readline(4096)
         if len(recv) > 4000:
             raise Exception("Server returned too large of a string")
         logger.debug("Recieved response from server {}".format(recv.strip()))
         if not recv:
             self.reset_connection()
-            return None
+            return {}
         return json.loads(recv)
 
     def loop(self):
@@ -294,48 +313,101 @@ class AgentSender(object):
             miner.queue[:] = remaining
 
 
+def install():
+    if os.geteuid() != 0:
+        print("Please run as root to install...")
+        exit(0)
+
+    # where are we running from right now?
+    script_path = os.path.realpath(__file__).replace('pyc', 'py')
+    print("Detected script in path " + script_path)
+    # chroot folder
+    script_dir = os.path.join(os.path.split(script_path)[:-1])[0]
+    # now build an executable path
+    exec_path = "{0} {1}".format(sys.executable, script_path)
+    print("Configuring executable path" + script_dir)
+    upstart = open(os.path.join(script_dir, '../install/upstart.conf')).read().format(exec_path=exec_path, chdir=script_dir)
+
+    setup_folders('/etc/ppagent/')
+
+    path = '/etc/init/ppagent.conf'
+    flo = open(path, 'w')
+    flo.write(upstart)
+    flo.close()
+    os.chmod(path, 0644)
+
+    import subprocess
+    try:
+        output = subprocess.check_output('useradd ppagent', shell=True)
+    except Exception as e:
+        if e.returncode == 9:
+            pass
+    print("Added ppagent user to run daemon under")
+    output = subprocess.check_output('service ppagent start', shell=True)
+    print output.strip()
+    if 'start' in output:
+        print("Started ppagent service!")
+
+
+def setup_folders(config_home):
+    try:
+        os.makedirs(config_home, 0751)
+        print("Config folder created")
+    except OSError as e:
+        if e.errno != 17:
+            print("Failed to create configuration directory")
+            exit(1)
+        print("Config directory already created")
+
+    with open(config_home + "config.json", 'w') as f:
+        f.write(default_config)
+        print("Wrote the default configuration file")
+
+
 def entry():
     parser = argparse.ArgumentParser(prog='ppagent')
     parser.add_argument('-l',
                         '--log-level',
                         choices=['DEBUG', 'INFO', 'WARN', 'ERROR'],
-                        default='WARN')
+                        default='INFO')
     parser.add_argument('-a',
                         '--address',
-                        default='agent.simpledoge.com')
+                        default='stratum.simpledoge.com')
+    parser.add_argument('-c',
+                        '--config',
+                        default=os.path.join(config_home, 'ppagent.json'))
     parser.add_argument('-p',
                         '--port',
                         type=int,
                         default=4444)
+    parser.add_argument('--version', action='version', version='%(prog)s 0.1')
     subparsers = parser.add_subparsers(title='main subcommands', dest='action')
 
-    subparsers.add_parser('call', help='manually fetch a key')
+    subparsers.add_parser('run', help='start the daemon')
+    subparsers.add_parser('install', help='install the upstart script and add user')
     args = parser.parse_args()
     configs = vars(args)
+
+    if configs['action'] == 'install':
+        try:
+            install()
+        except Exception:
+            print("Installation failed because of an unhandled exception:")
+            raise
+        exit(0)
 
     # rely on command line log level until we get all configs parsed
     ch.setLevel(getattr(logging, args.log_level))
     logger.setLevel(getattr(logging, args.log_level))
 
-    # make a configuration directory, fail if we cannot make it
-    try:
-        os.makedirs(config_home)
-        logger.debug("Config created")
-    except OSError as e:
-        if e.errno != 17:
-            logger.error("Failed to create toroidal configuration directory")
-            exit(1)
-        logger.debug("Config directory already created")
-
     # setup or load our configuration file
     try:
-        file_configs = yaml.load(open(config_home + "config.yml"))
-        logger.debug("Loaded JSON config file")
+        file_configs = json.load(open(configs['config']))
+        logger.debug("Loaded JSON config file from {}".format(configs['config']))
     except (IOError, OSError):
-        logger.debug("JSON configuration file doesn't exist.. Creating empty one")
-        with open(config_home + "config.yml", 'w') as f:
-            f.write("{}")
-        file_configs = {}
+        logger.error("JSON configuration file {} couldn't be loaded, no miners configured, exiting..."
+                     .format(configs['config']), exc_info=True)
+        exit(1)
 
     # setup our collected configs by recursively overriding
     def update(d, u):
@@ -373,3 +445,6 @@ def entry():
 
     sender = AgentSender(miners, configs['address'], configs['port'])
     sender.loop()
+
+if __name__ == "__main__":
+    entry()
