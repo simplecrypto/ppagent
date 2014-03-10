@@ -10,6 +10,7 @@ setup(name='ppagent',
       author_email='isaac@simpload.com',
       url='http://www.python.org/sigs/distutils-sig/',
       packages=find_packages(),
+      requires=['argparse'],
       entry_points={
           'console_scripts': [
               'ppagent = ppagent.main:entry'

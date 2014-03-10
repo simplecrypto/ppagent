@@ -87,8 +87,8 @@ class CGMiner(Miner):
         self.remotes = remotes
         self.address = address
         # filter our disabled collectors
-        self.collectors = {k: v for (k, v) in collectors.items()
-                           if v.get('enabled', False)}
+        self.collectors = dict((k, v) for (k, v) in collectors.items()
+                               if v.get('enabled', False))
 
         self._worker = None
         self.queue = []
@@ -205,7 +205,7 @@ class AgentSender(object):
         self.conn = None
 
     def connect(self):
-        logger.debug("Opening connection to agent server; addr: {}; port: {}"
+        logger.debug("Opening connection to agent server; addr: {0}; port: {1}"
                      .format(self.address, self.port))
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         conn.connect((self.address, self.port))
@@ -222,7 +222,7 @@ class AgentSender(object):
             miner.authenticated = False
 
     def send(self, data):
-        logger.debug("Sending {} to server".format(data))
+        logger.debug("Sending {0} to server".format(data))
         try:
             if self.conn is None:
                 self.connect()
@@ -239,7 +239,7 @@ class AgentSender(object):
         recv = self.conn.readline(4096)
         if len(recv) > 4000:
             raise Exception("Server returned too large of a string")
-        logger.debug("Recieved response from server {}".format(recv.strip()))
+        logger.debug("Recieved response from server {0}".format(recv.strip()))
         if not recv:
             self.reset_connection()
             return {}
@@ -266,7 +266,7 @@ class AgentSender(object):
                     logger.info("Unable to connect to miner")
                     continue
 
-                logger.debug("Attempting to authenticate {}".format(username))
+                logger.debug("Attempting to authenticate {0}".format(username))
                 data = {'method': 'worker.authenticate',
                         'params': [username, ]}
                 try:
@@ -278,12 +278,12 @@ class AgentSender(object):
 
                 retval = self.recieve()
                 if retval['error'] is None:
-                    logger.info("Successfully authenticated {}".format(username))
+                    logger.info("Successfully authenticated {0}".format(username))
                     miner.authenticated = True
                     miner.reset_timers()
                 else:
                     logger.debug(
-                        "Failed to authenticate worker {}, server returned {}."
+                        "Failed to authenticate worker {0}, server returned {1}."
                         .format(username, retval))
 
             if miner.authenticated is True:
@@ -297,7 +297,7 @@ class AgentSender(object):
             for value in miner.queue:
                 try:
                     send = {'method': 'stats.submit', 'params': value}
-                    logger.info("Transmiting new stats: {}".format(send))
+                    logger.info("Transmiting new stats: {0}".format(send))
                     self.send(send)
                 except Exception:
                     logger.warn(
@@ -403,9 +403,9 @@ def entry():
     # setup or load our configuration file
     try:
         file_configs = json.load(open(configs['config']))
-        logger.debug("Loaded JSON config file from {}".format(configs['config']))
+        logger.debug("Loaded JSON config file from {0}".format(configs['config']))
     except (IOError, OSError):
-        logger.error("JSON configuration file {} couldn't be loaded, no miners configured, exiting..."
+        logger.error("JSON configuration file {0} couldn't be loaded, no miners configured, exiting..."
                      .format(configs['config']), exc_info=True)
         exit(1)
 
