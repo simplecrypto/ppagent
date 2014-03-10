@@ -12,7 +12,7 @@ except:
 
 
 setup(name='ppagent',
-      version='0.2',
+      version='0.2.1',
       description='A statistics collection agent for powerpool mining server',
       author='Isaac Cook',
       long_description=README,
