@@ -348,16 +348,14 @@ def install(configs):
         os.chmod(path, 0644)
 
         try:
-            output = subprocess.check_output('useradd ppagent', shell=True)
+            subprocess.call('useradd ppagent', shell=True)
         except Exception as e:
-            if e.returncode == 9:
+            if getattr(e, 'returncode', 0) == 9:
                 pass
+            raise
         print("Added ppagent user to run daemon under")
 
-        output = subprocess.check_output('service ppagent start', shell=True)
-        print output.strip()
-        if 'start' in output:
-            print("Started ppagent service!")
+        subprocess.call('service ppagent restart', shell=True)
     elif configs['type'] == 'sysv':
         sysv = open(os.path.join(script_dir, 'install/initd')).read()
         sysv = Template(sysv).safe_substitute(exec_path=exec_path)
