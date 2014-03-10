@@ -8,6 +8,7 @@ import collections
 import time
 import traceback
 
+from string import Template
 from os.path import expanduser
 
 
@@ -314,7 +315,7 @@ class AgentSender(object):
             miner.queue[:] = remaining
 
 
-def install():
+def install(configs):
     if os.geteuid() != 0:
         print("Please run as root to install...")
         exit(0)
@@ -327,27 +328,39 @@ def install():
     # now build an executable path
     exec_path = "{0} {1}".format(sys.executable, script_path)
     print("Configuring executable path" + script_dir)
-    upstart = open(os.path.join(script_dir, 'install/upstart.conf')).read().format(exec_path=exec_path, chdir=script_dir)
-
     setup_folders('/etc/ppagent/')
 
-    path = '/etc/init/ppagent.conf'
-    flo = open(path, 'w')
-    flo.write(upstart)
-    flo.close()
-    os.chmod(path, 0644)
-
     import subprocess
-    try:
-        output = subprocess.check_output('useradd ppagent', shell=True)
-    except Exception as e:
-        if e.returncode == 9:
-            pass
-    print("Added ppagent user to run daemon under")
-    output = subprocess.check_output('service ppagent start', shell=True)
-    print output.strip()
-    if 'start' in output:
-        print("Started ppagent service!")
+    if configs['type'] == 'upstart':
+        upstart = open(os.path.join(script_dir, 'install/upstart.conf')).read().format(exec_path=exec_path, chdir=script_dir)
+
+        path = '/etc/init/ppagent.conf'
+        flo = open(path, 'w')
+        flo.write(upstart)
+        flo.close()
+        os.chmod(path, 0644)
+
+        try:
+            output = subprocess.check_output('useradd ppagent', shell=True)
+        except Exception as e:
+            if e.returncode == 9:
+                pass
+        print("Added ppagent user to run daemon under")
+
+        output = subprocess.check_output('service ppagent start', shell=True)
+        print output.strip()
+        if 'start' in output:
+            print("Started ppagent service!")
+    elif configs['type'] == 'sysv':
+        sysv = open(os.path.join(script_dir, 'install/initd')).read()
+        sysv = Template(sysv).safe_substitute(exec_path=exec_path)
+
+        path = '/etc/init.d/ppagent'
+        flo = open(path, 'w')
+        flo.write(sysv)
+        flo.close()
+        os.chmod(path, 0751)
+        output = subprocess.call('/etc/init.d/ppagent start', shell=True)
 
 
 def setup_folders(config_home):
@@ -385,13 +398,15 @@ def entry():
     subparsers = parser.add_subparsers(title='main subcommands', dest='action')
 
     subparsers.add_parser('run', help='start the daemon')
-    subparsers.add_parser('install', help='install the upstart script and add user')
+    inst = subparsers.add_parser('install', help='install the upstart script and add user')
+    inst.add_argument('type', choices=['upstart', 'sysv'],
+                      help='upstart for ubuntu, sysv for debian.')
     args = parser.parse_args()
     configs = vars(args)
 
     if configs['action'] == 'install':
         try:
-            install()
+            install(configs)
         except Exception:
             print("Installation failed because of an unhandled exception:")
             raise

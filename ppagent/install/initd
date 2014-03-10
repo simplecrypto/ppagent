@@ -8,7 +8,7 @@
 # Description:       A powerpool mininger server stat collector
 ### END INIT INFO
  
-SCRIPT="/usr/bin/python /usr/local/lib/python2.6/dist-packages/ppagent/main.py -c /etc/ppagent/config.json run"
+SCRIPT="${exec_path} -c /etc/ppagent/config.json run"
 RUNAS=root
  
 PIDFILE=/var/run/ppagent.pid
