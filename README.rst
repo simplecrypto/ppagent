@@ -45,14 +45,14 @@ Ubuntu:
 
 .. code-block:: bash
 
-    sudo pip install --uprgade ppagent
+    sudo pip install --upgrade ppagent
     sudo service ppagent restart
     
 Debian (for BAMT or SMOS):
 
 .. code-block:: bash
 
-    sudo pip install --uprgade ppagent
+    sudo pip install --upgrade ppagent
     sudo /etc/init.d/ppagent stop
     sudo /etc/init.d/ppagent start
     
