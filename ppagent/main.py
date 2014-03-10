@@ -128,7 +128,7 @@ class CGMiner(Miner):
         if 'status' in self.collectors and now >= self.collectors['status']['next_run']:
             conf = self.collectors['status']
             gpus = [{} for _ in temps]
-            output = {"type": "cgminer", "gpus": gpus}
+            output = {"type": "cgminer", "gpus": gpus, "pool": self.pool_stat()}
             # if it failed to connect we should just skip collection
             if ret is None:
                 return
@@ -175,6 +175,13 @@ class CGMiner(Miner):
         finally:
             sok.close()
         return retval
+
+    def pool_stat(self):
+        data = self.call('pools')
+        for pool in data['POOLS']:
+            if pool['Stratum URL'] in self.remotes:
+                return pool
+        return {}
 
     def fetch_username(self):
         data = self.call('pools')
