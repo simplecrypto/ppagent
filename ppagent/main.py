@@ -360,7 +360,8 @@ def install(configs):
         flo.write(sysv)
         flo.close()
         os.chmod(path, 0751)
-        output = subprocess.call('/etc/init.d/ppagent start', shell=True)
+        subprocess.call('/etc/init.d/ppagent start', shell=True)
+        subprocess.call('update-rc.d ppagent defaults', shell=True)
 
 
 def setup_folders(config_home):
