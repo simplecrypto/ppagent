@@ -49,6 +49,7 @@ miner_defaults = {
                 'enabled': True,
                 'temperature': True,
                 'mhps': True,
+                'details': True,
                 'interval': 60
             },
             'temp': {
@@ -122,7 +123,7 @@ class CGMiner(Miner):
                 'temp' in self.collectors or
                 'hashrate' in self.collectors):
             ret = self.call_devs()
-            mhs, temps = ret
+            mhs, temps, details = ret
 
         if 'status' in self.collectors and now >= self.collectors['status']['next_run']:
             conf = self.collectors['status']
@@ -137,6 +138,9 @@ class CGMiner(Miner):
             if conf['mhps']:
                 for i, mh in enumerate(mhs):
                     output['gpus'][i]['hash'] = mh
+            if conf['details']:
+                for i, det in enumerate(details):
+                    output['gpus'][i].update(det)
             self.queue.append([self.worker, 'status', output, now])
 
             # set the next time it should run
@@ -186,6 +190,10 @@ class CGMiner(Miner):
             raise Exception()
 
         temps = [d.get('Temperature') for d in data['DEVS']]
+        details = []
+        for d in data['DEVS']:
+            details.append(dict((k, v) for k, v in d.iteritems()
+                                if k != 'Temperature'))
         # we store the last total megahashes internally and report the
         # difference since last run, as opposed to reporting cgminers avg
         # megahash or 5s megahash
@@ -195,7 +203,7 @@ class CGMiner(Miner):
         else:
             mhs = []
         self.last_devs = data['DEVS']
-        return mhs, temps
+        return mhs, temps, details
 
 
 class AgentSender(object):
