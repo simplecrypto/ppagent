@@ -289,7 +289,14 @@ class AgentSender(object):
                         .format(username, retval))
 
             if miner.authenticated is True:
-                miner.collect()
+                try:
+                    miner.collect()
+                except socket.error:
+                    logger.info("Problem collecting from cgminer, resetting connection")
+                    miner.authenticated = False
+                except Exception:
+                    logger.info("Unhandled exception from collection, resetting connection", exc_info=True)
+                    miner.authenticated = False
             else:
                 # don't distribute if we're not authenticated...
                 continue
