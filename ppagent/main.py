@@ -6,15 +6,16 @@ import logging
 import sys
 import collections
 import time
+import traceback
 
 from os.path import expanduser
 
 
-def excepthook(type, value, traceback):
+def excepthook(type, value, tb):
     print 'Unhandled exception'
     print 'Type:', type
     print 'Value:', value
-    print 'Traceback:', traceback
+    traceback.print_tb(tb)
 sys.excepthook = excepthook
 
 logger = logging.getLogger("ppagent")
@@ -326,7 +327,7 @@ def install():
     # now build an executable path
     exec_path = "{0} {1}".format(sys.executable, script_path)
     print("Configuring executable path" + script_dir)
-    upstart = open(os.path.join(script_dir, '../install/upstart.conf')).read().format(exec_path=exec_path, chdir=script_dir)
+    upstart = open(os.path.join(script_dir, 'install/upstart.conf')).read().format(exec_path=exec_path, chdir=script_dir)
 
     setup_folders('/etc/ppagent/')
 
