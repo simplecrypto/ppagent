@@ -2,6 +2,7 @@
 
 from setuptools import setup, find_packages
 import os
+import sys
 
 here = os.path.abspath(os.path.dirname(__file__))
 try:
@@ -11,6 +12,11 @@ except:
     README = ''
 
 
+requires = []
+# add argparse to be installed for earlier versions of python
+if sys.version_info[:2] <= (2, 6):
+    requires.append('argparse')
+
 setup(name='ppagent',
       version='0.2.1',
       description='A statistics collection agent for powerpool mining server',
@@ -19,7 +25,7 @@ setup(name='ppagent',
       author_email='isaac@simpload.com',
       url='http://www.python.org/sigs/distutils-sig/',
       packages=find_packages(),
-      install_requires=['argparse'],
+      install_requires=requires,
       package_data={'ppagent': ['install/*']},
       entry_points={
           'console_scripts': [
