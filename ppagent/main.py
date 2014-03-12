@@ -7,20 +7,11 @@ import sys
 import collections
 import time
 import traceback
-import pkg_resources
 
 from string import Template
 from os.path import expanduser
 
-version = pkg_resources.require("ppagent")[0].version
-
-
-def excepthook(type, value, tb):
-    print 'Unhandled exception'
-    print 'Type:', type
-    print 'Value:', value
-    traceback.print_tb(tb)
-sys.excepthook = excepthook
+version = '0.2.5'
 
 logger = logging.getLogger("ppagent")
 config_home = expanduser("~/.ppagent/")
@@ -29,6 +20,12 @@ ch = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+
+def excepthook(ex_cls, ex, tb):
+    logging.critical(''.join(traceback.format_tb(tb)))
+    logging.critical('{0}: {1}'.format(ex_cls, ex))
+    easy_exit(1)
+sys.excepthook = excepthook
 
 default_config = '''[
     {"miner":
@@ -41,6 +38,13 @@ default_config = '''[
 
 class WorkerNotFound(Exception):
     pass
+
+
+def easy_exit(code=0):
+    """ A helper to prevent the window from closing rapidly on windows """
+    if sys.platform == "win32":
+        raw_input("Press any key to continue...")
+    exit(code)
 
 
 miner_defaults = {
@@ -144,6 +148,7 @@ class CGMiner(Miner):
             if conf['details']:
                 for i, det in enumerate(details):
                     output['gpus'][i].update(det)
+            output['v'] = version
             self.queue.append([self.worker, 'status', output, now])
 
             # set the next time it should run
@@ -342,17 +347,17 @@ class AgentSender(object):
 
 def install(configs):
     if os.geteuid() != 0:
-        print("Please run as root to install...")
-        exit(0)
+        logger.error("Please run as root to install...")
+        easy_exit()
 
     # where are we running from right now?
     script_path = os.path.realpath(__file__).replace('pyc', 'py')
-    print("Detected script in path " + script_path)
+    logger.info("Detected script in path " + script_path)
     # chroot folder
     script_dir = os.path.join(os.path.split(script_path)[:-1])[0]
     # now build an executable path
     exec_path = "{0} {1}".format(sys.executable, script_path)
-    print("Configuring executable path" + script_dir)
+    logger.info("Configuring executable path" + script_dir)
     setup_folders('/etc/ppagent/')
 
     import subprocess
@@ -371,7 +376,7 @@ def install(configs):
             if getattr(e, 'returncode', 0) == 9:
                 pass
             raise
-        print("Added ppagent user to run daemon under")
+        logger.info("Added ppagent user to run daemon under")
 
         subprocess.call('service ppagent restart', shell=True)
     elif configs['type'] == 'sysv':
@@ -387,19 +392,22 @@ def install(configs):
         subprocess.call('update-rc.d ppagent defaults', shell=True)
 
 
-def setup_folders(config_home):
+def setup_folders(config_home, filename="config.json"):
     try:
         os.makedirs(config_home, 0751)
-        print("Config folder created")
+        logger.info("Config folder created at {0}"
+                    .format(config_home))
     except OSError as e:
         if e.errno != 17:
-            print("Failed to create configuration directory")
-            exit(1)
-        print("Config directory already created")
+            logger.error("Failed to create configuration directory at {0}"
+                         .format(config_home))
+            easy_exit(1)
+        logger.debug("Config directory already created")
 
-    with open(config_home + "config.json", 'w') as f:
+    with open(os.path.join(config_home, filename), 'w') as f:
         f.write(default_config)
-        print("Wrote the default configuration file")
+        logger.info("Wrote the default configuration file to {0}"
+                    .format(os.path.join(config_home, filename)))
 
 
 def entry():
@@ -414,7 +422,7 @@ def entry():
                         default='stratum.simpledoge.com')
     parser.add_argument('-c',
                         '--config',
-                        default=os.path.join(config_home, 'ppagent.json'))
+                        default=None)
     parser.add_argument('-p',
                         '--port',
                         type=int,
@@ -433,13 +441,28 @@ def entry():
         try:
             install(configs)
         except Exception:
-            print("Installation failed because of an unhandled exception:")
+            logger.info("Installation failed because of an unhandled exception:")
             raise
-        exit(0)
+        easy_exit(0)
 
     # rely on command line log level until we get all configs parsed
     ch.setLevel(getattr(logging, args.log_level))
     logger.setLevel(getattr(logging, args.log_level))
+
+    # if they didn't specify a config file lets create a default in the os
+    # specific default locations
+    if configs['config'] is None:
+        if sys.platform == "win32":
+            configs['config'] = 'ppagent.json'
+            path = '.'
+            name = 'ppagent.json'
+        else:
+            configs['config'] = os.path.join(config_home, 'config.json')
+            path = config_home
+            name = 'config.json'
+
+        if not os.path.isfile(configs['config']):
+            setup_folders(path, name)
 
     # setup or load our configuration file
     try:
@@ -448,7 +471,7 @@ def entry():
     except (IOError, OSError):
         logger.error("JSON configuration file {0} couldn't be loaded, no miners configured, exiting..."
                      .format(configs['config']), exc_info=True)
-        exit(1)
+        easy_exit(1)
 
     # setup our collected configs by recursively overriding
     def update(d, u):
