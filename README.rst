@@ -18,11 +18,14 @@ Ubuntu:
 
     sudo pip install ppagent
     sudo ppagent install upstart
+ppagent will now start with your computer automatically.
 
 Windows:
 **************************
 #. `Download latest binary <https://github.com/icook/ppagent/releases/download/v0.2.5/ppagent.exe>`_.
 #. Run the binary when connected to stratum.simpledoge.com and status will be automatically reported.
+
+To make ppagent start on boot, `see this post <http://superuser.com/questions/63326/enable-exe-to-run-at-startup>`_.
     
 Debian (for BAMT or SMOS):
 **************************
@@ -30,7 +33,10 @@ Debian (for BAMT or SMOS):
 
     sudo pip install ppagent
     sudo ppagent install sysv
+ppagent will now start with your computer automatically.
     
+======================================================================
+
 Now when your miner is running against stratum.simpledoge.com the daemon will
 automatically start sending statistics to the server as well. Check your stats
 page on SimpleDoge to see that it's working. You should see something similar
