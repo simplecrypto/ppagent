@@ -13,19 +13,19 @@ can be done on command line with the ``--api-listen`` argument, or in your
 configuration file with ``"api-listen": true``.
 
 Ubuntu:
-
+**************************
 .. code-block:: bash
 
     sudo pip install ppagent
     sudo ppagent install upstart
 
 Windows:
-
+**************************
 #. `Download latest binary <https://github.com/icook/ppagent/releases/download/v0.2.5/ppagent.exe>`_.
-#. Run the binary at the same time cgminer is running and connected to stratum.simpledoge.com and status will be automatically reported.
+#. Run the binary when connected to stratum.simpledoge.com and status will be automatically reported.
     
 Debian (for BAMT or SMOS):
-
+**************************
 .. code-block:: bash
 
     sudo pip install ppagent
