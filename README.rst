@@ -102,7 +102,8 @@ during the day.
     
 Troubleshooting
 ^^^^^^^^^^^^^^^
-If it's not showing up after a minute or two you should first check the logs.
+If stats aren't showing up after a minute or two you should first check the logs.
+
 On debian these are at:
 
 .. code-block:: bash
@@ -114,6 +115,8 @@ On Ubuntu:
 .. code-block:: bash
 
     /var/log/upstart/ppagent.log
+
+On Windows they're in the console that appears when you launch the client.
     
 The error messages should give you a clue why it's not working.
 If not, login to the `simple doge IRC <https://kiwiirc.com/client/irc.freenode.net/#simpledoge>`_
