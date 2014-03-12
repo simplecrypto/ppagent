@@ -18,7 +18,7 @@ if sys.version_info[:2] <= (2, 6):
     requires.append('argparse')
 
 setup(name='ppagent',
-      version='0.2.3',
+      version='0.2.4',
       description='A statistics collection agent for powerpool mining server',
       author='Isaac Cook',
       long_description=README,

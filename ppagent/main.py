@@ -7,9 +7,12 @@ import sys
 import collections
 import time
 import traceback
+import pkg_resources
 
 from string import Template
 from os.path import expanduser
+
+version = pkg_resources.require("ppagent")[0].version
 
 
 def excepthook(type, value, tb):
@@ -400,7 +403,8 @@ def setup_folders(config_home):
 
 
 def entry():
-    parser = argparse.ArgumentParser(prog='ppagent')
+    parser = argparse.ArgumentParser(
+        prog='ppagent', description='A daemon for reporting mining statistics to your pool.')
     parser.add_argument('-l',
                         '--log-level',
                         choices=['DEBUG', 'INFO', 'WARN', 'ERROR'],
@@ -415,7 +419,7 @@ def entry():
                         '--port',
                         type=int,
                         default=4444)
-    parser.add_argument('--version', action='version', version='%(prog)s 0.1')
+    parser.add_argument('--version', action='version', version='%(prog)s {}'.format(version))
     subparsers = parser.add_subparsers(title='main subcommands', dest='action')
 
     subparsers.add_parser('run', help='start the daemon')
