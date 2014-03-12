@@ -15,13 +15,15 @@ Ubuntu:
 **************************
 .. code-block:: bash
 
+    # Install python and python package manager pip (frequently already installed)
+    sudo apt-get install python python-pip
     sudo pip install ppagent
     sudo ppagent install upstart
 ppagent will now start with your computer automatically.
 
 Windows:
 **************************
-#. `Download latest binary <https://github.com/icook/ppagent/releases/download/v0.2.5/ppagent.exe>`_.
+#. `Download latest exe <https://github.com/icook/ppagent/releases/download/v0.2.5/ppagent.exe>`_.
 #. Run the binary when connected to stratum.simpledoge.com and status will be automatically reported.
 
 To make ppagent start on boot, `see this post <http://superuser.com/questions/63326/enable-exe-to-run-at-startup>`_.
@@ -30,6 +32,8 @@ Debian (for BAMT or SMOS):
 **************************
 .. code-block:: bash
 
+    # Install python and python package manager pip (frequently already installed)
+    sudo apt-get install python python-pip
     sudo pip install ppagent
     sudo ppagent install sysv
 ppagent will now start with your computer automatically.
@@ -55,16 +59,35 @@ Ubuntu:
 
 .. code-block:: bash
 
-    sudo pip install --upgrade ppagent
+    sudo pip install --upgrade --ignore-installed ppagent==0.2.5
     sudo service ppagent restart
+    # now confirm that the right version is installed
+    ppagent --version
     
 Debian (for BAMT or SMOS):
 
 .. code-block:: bash
 
-    sudo pip install --upgrade ppagent
+    sudo pip install --upgrade --ignore-installed ppagent==0.2.5
     sudo /etc/init.d/ppagent stop
     sudo /etc/init.d/ppagent start
+    # now confirm that the right version is installed
+    ppagent --version
+
+Windows:
+
+Simply `Download latest exe <https://github.com/icook/ppagent/releases/download/v0.2.5/ppagent.exe>`_ and replace your old one.
+
+Troubleshooting Upgrade
+***************************
+
+On ubuntu, sometimes pip (python package manager) will refuse to install a new
+version. Frequently clearing the cache will fix this:
+
+.. code-block:: bash
+
+    rm -rf /tmp/pip-build-root
+    
     
 Troubleshooting
 ^^^^^^^^^^^^^^^
