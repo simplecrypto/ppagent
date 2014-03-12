@@ -317,9 +317,11 @@ class AgentSender(object):
                 except socket.error:
                     logger.info("Problem collecting from cgminer, resetting connection")
                     miner.authenticated = False
+                    miner._worker = None
                 except Exception:
                     logger.info("Unhandled exception from collection, resetting connection", exc_info=True)
                     miner.authenticated = False
+                    miner._worker = None
             else:
                 # don't distribute if we're not authenticated...
                 continue
@@ -434,7 +436,10 @@ def entry():
     inst = subparsers.add_parser('install', help='install the upstart script and add user')
     inst.add_argument('type', choices=['upstart', 'sysv'],
                       help='upstart for ubuntu, sysv for debian.')
-    args = parser.parse_args()
+    if len(sys.argv) == 1:
+        args = parser.parse_args(['run'])
+    else:
+        args = parser.parse_args()
     configs = vars(args)
 
     if configs['action'] == 'install':
