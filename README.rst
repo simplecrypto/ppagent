@@ -1,13 +1,12 @@
 PowerPool Agent
 ===============
 A statistics collection agent for the PowerPool mining server. It was built to
-work with `Simple Doge mining pool <http://simpledoge.com>`_ . Currently only
-available for linux distributions running python 2.6 or 2.7. Tested on cgminer
-3.7.2 and sgminer 4.1.0, may work for other cgminer derivatives.
+work with `Simple Doge mining pool <http://simpledoge.com>`_ . Runs on Windows,
+Ubuntu Linux and Debian Linux. Tested on cgminer 3.7.2 and sgminer 4.1.0,
+should also work on other derivatives.
 
 Installation
 ^^^^^^^^^^^^
-
 Make sure your cgminer or sgminer is running with the api port enabled. This
 can be done on command line with the ``--api-listen`` argument, or in your
 configuration file with ``"api-listen": true``.
@@ -44,8 +43,8 @@ to this:
 
 .. image:: https://github.com/icook/ppagent/raw/master/doc/worker_stat.png
     :alt: Worker status display
-    :width: 276
-    :height: 153
+    :width: 943
+    :height: 234
     :align: center
 
 
