@@ -86,8 +86,19 @@ version. Frequently clearing the cache will fix this:
 
 .. code-block:: bash
 
-    rm -rf /tmp/pip-build-root
+    sudo rm -rf /tmp/pip-build-root
     
+You can also try uninstalling and reinstalling it. This will not
+remove you're configuration files.
+
+.. code-block:: bash
+
+    sudo pip uninstall ppagent
+    sudo pip install ppagent
+
+If you still can't get it you're welcome to come bug us on `IRC
+<https://kiwiirc.com/client/irc.freenode.net/#simpledoge>`_, we're usually on
+during the day.
     
 Troubleshooting
 ^^^^^^^^^^^^^^^
