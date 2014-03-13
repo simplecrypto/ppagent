@@ -11,7 +11,7 @@ import traceback
 from string import Template
 from os.path import expanduser
 
-version = '0.2.5'
+version = '0.2.6'
 
 logger = logging.getLogger("ppagent")
 config_home = expanduser("~/.ppagent/")
@@ -261,7 +261,12 @@ class AgentSender(object):
         if self.conn is None:
             return {}
 
-        recv = self.conn.readline(4096)
+        try:
+            recv = self.conn.readline(4096)
+        except socket.error:
+            self.reset_connection()
+            return {}
+
         if len(recv) > 4000:
             raise Exception("Server returned too large of a string")
         logger.debug("Recieved response from server {0}".format(recv.strip()))
@@ -302,7 +307,7 @@ class AgentSender(object):
                     continue
 
                 retval = self.recieve()
-                if retval['error'] is None:
+                if retval.get('error', True) is None:
                     logger.info("Successfully authenticated {0}".format(username))
                     miner.authenticated = True
                     miner.reset_timers()
