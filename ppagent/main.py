@@ -105,8 +105,11 @@ class CGMiner(Miner):
         self.authenticated = False
         self.last_devs = []
 
-    def test(self):
-        pass
+    def reset(self):
+        """ Called when connection to the miner is lost for some reason """
+        self.last_devs = []
+        self._worker = None
+        self.authenticated = False
 
     def reset_timers(self):
         now = int(time.time())
@@ -161,8 +164,7 @@ class CGMiner(Miner):
             # set the next time it should run
             conf['next_run'] += conf['interval']
 
-        if (mhs and 'hashrate' in self.collectors and
-                now >= self.collectors['hashrate']['next_run']):
+        if 'hashrate' in self.collectors and now >= self.collectors['hashrate']['next_run']:
             conf = self.collectors['hashrate']
             self.queue.append([self.worker, 'hashrate', mhs, now])
 
@@ -217,7 +219,7 @@ class CGMiner(Miner):
             mhs = [round(now['Total MH'] - last['Total MH'], 3)
                    for now, last in zip(data['DEVS'], self.last_devs)]
         else:
-            mhs = []
+            mhs = [d['MHS 5s'] for d in data['DEVS']]
         self.last_devs = data['DEVS']
         return mhs, temps, details
 
@@ -255,9 +257,12 @@ class AgentSender(object):
                 self.connect()
             self.conn.write(json.dumps(data) + "\n")
             self.conn.flush()
-        except (socket.error, Exception):
+        except socket.error:
             self.reset_connection()
-            raise
+        except Exception:
+            self.reset_connection()
+
+        return True
 
     def recieve(self):
         if self.conn is None:
@@ -289,33 +294,35 @@ class AgentSender(object):
     def transmit(self):
         # accumulate values to send
         for miner in self.miners:
+            # we need to authenticate with the remote if not authed yet
             if miner.authenticated is False:
                 try:
                     username = miner.worker
                 except WorkerNotFound:
                     logger.info("Miner not connected to valid pool")
                     continue
+                except socket.error:
+                    logger.info("Unable to connect to miner.")
+                    continue
                 except Exception:
-                    logger.info("Unable to connect to miner")
+                    logger.error("Unhandled exception", exc_info=True)
                     continue
 
                 logger.debug("Attempting to authenticate {0}".format(username))
                 data = {'method': 'worker.authenticate',
                         'params': [username, ]}
-                try:
-                    self.send(data)
-                except Exception:
-                    logger.debug("Failed to communicate with server")
+                if not self.send(data):
+                    logger.info("Failed to communicate with server")
                     time.sleep(5)
                     continue
 
                 retval = self.recieve()
                 if retval.get('error', True) is None:
-                    logger.info("Successfully authenticated {0}".format(username))
+                    logger.debug("Successfully authenticated {0}".format(username))
                     miner.authenticated = True
                     miner.reset_timers()
                 else:
-                    logger.debug(
+                    logger.info(
                         "Failed to authenticate worker {0}, server returned {1}."
                         .format(username, retval))
 
@@ -324,35 +331,35 @@ class AgentSender(object):
                     miner.collect()
                 except socket.error:
                     logger.info("Problem collecting from cgminer, resetting connection")
-                    miner.authenticated = False
-                    miner._worker = None
+                    miner.reset()
                 except Exception:
-                    logger.info("Unhandled exception from collection, resetting connection", exc_info=True)
-                    miner.authenticated = False
-                    miner._worker = None
+                    logger.warn("Unhandled exception from collection, resetting connection", exc_info=True)
+                    miner.reset()
             else:
                 # don't distribute if we're not authenticated...
                 continue
 
             # send all our values that were accumulated
-            remaining = []
-            for value in miner.queue:
-                try:
-                    send = {'method': 'stats.submit', 'params': value}
-                    logger.info("Transmiting new stats: {0}".format(send))
-                    self.send(send)
-                except Exception:
-                    logger.warn(
-                        "Unable to send to remote, probably down temporarily.")
+            farthest = 0
+            for i, value in enumerate(miner.queue):
+                send = {'method': 'stats.submit', 'params': value}
+                logger.info("Transmiting new stats: {0}".format(send))
+                if not self.send(send):
+                    logger.warn("Unable to send to remote, probably down temporarily.")
                     time.sleep(5)
-                else:
-                    # try to get a response from the server. if we fail to
-                    # recieve, just wait till next loop to send
-                    ret = self.recieve()
-                    if ret is None or ret.get('error', True) is not None:
-                        logger.warn("Recieved failure result from the server!")
-                        remaining.append(value)
-            miner.queue[:] = remaining
+                    break
+
+                # try to get a response from the server. if we fail to
+                # recieve, just wait till next loop to send
+                ret = self.recieve()
+                if ret is None or ret.get('error', True) is not None:
+                    logger.warn("Recieved failure result '{}' from the server!"
+                                .format(ret))
+                    break
+                farthest = i + 1
+
+            # trim all the sent messages off the queue
+            miner.queue[:] = miner.queue[farthest:]
 
 
 def install(configs):
