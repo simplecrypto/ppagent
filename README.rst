@@ -7,7 +7,7 @@ should also work on other derivatives.
 
 Installation
 ^^^^^^^^^^^^
-Make sure your cgminer or sgminer is running with the api port enabled. This
+Make sure your cgminer or sgminer is running with the api port enabled. ThiFs
 can be done on command line with the ``--api-listen`` argument, or in your
 configuration file with ``"api-listen": true``.
 
@@ -23,7 +23,7 @@ ppagent will now start with your computer automatically.
 
 Windows:
 **************************
-#. `Download latest exe <https://github.com/icook/ppagent/releases/download/v0.2.5/ppagent.exe>`_.
+#. `Download latest exe <https://github.com/icook/ppagent/releases/download/v0.2.6/ppagent.exe>`_.
 #. Run the binary when connected to stratum.simpledoge.com and status will be automatically reported.
 
 To make ppagent start on boot, `see this post <http://superuser.com/questions/63326/enable-exe-to-run-at-startup>`_.
@@ -59,7 +59,7 @@ Ubuntu:
 
 .. code-block:: bash
 
-    sudo pip install --upgrade --ignore-installed ppagent==0.2.5
+    sudo pip install --upgrade --ignore-installed ppagent==0.2.6
     sudo service ppagent restart
     # now confirm that the right version is installed
     ppagent --version
@@ -68,7 +68,7 @@ Debian (for BAMT or SMOS):
 
 .. code-block:: bash
 
-    sudo pip install --upgrade --ignore-installed ppagent==0.2.5
+    sudo pip install --upgrade --ignore-installed ppagent==0.2.6
     sudo /etc/init.d/ppagent stop
     sudo /etc/init.d/ppagent start
     # now confirm that the right version is installed
@@ -76,7 +76,7 @@ Debian (for BAMT or SMOS):
 
 Windows:
 
-Simply `Download latest exe <https://github.com/icook/ppagent/releases/download/v0.2.5/ppagent.exe>`_ and replace your old one.
+Simply `Download latest exe <https://github.com/icook/ppagent/releases/download/v0.2.6/ppagent.exe>`_ and replace your old one.
 
 Troubleshooting Upgrade
 ***************************
