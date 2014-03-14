@@ -172,6 +172,7 @@ class CGMiner(Miner):
     def call(self, command, params=None):
         sok = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sok.connect((self.address, self.port))
+        sok.settimeout(5)
         try:
             sok.send('{"command":"' + command + '"}')
             data = sok.makefile().readline()[:-1]
@@ -234,6 +235,7 @@ class AgentSender(object):
                      .format(self.address, self.port))
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         conn.connect((self.address, self.port))
+        conn.settimeout(15)
         self.conn = conn.makefile()
         logger.debug("Announcing hello message")
         self.conn.write(json.dumps({'method': 'hello', 'params': [0.1]}) + "\n")
@@ -263,7 +265,8 @@ class AgentSender(object):
 
         try:
             recv = self.conn.readline(4096)
-        except socket.error:
+        except socket.error as e:
+            logger.debug("Failed to recieve response, connection error", exc_info=True)
             self.reset_connection()
             return {}
 
