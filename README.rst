@@ -86,7 +86,7 @@ at least 5 minute adjust your configuration to look like this:
     [
         {"miner":
             {
-                "type": "CGMiner"
+                "type": "CGMiner",
                 "thresholds": {
                     "offline": 5,
                     "emails": ["winston.com"]
@@ -107,7 +107,7 @@ above 85 C.
     [
         {"miner":
             {
-                "type": "CGMiner"
+                "type": "CGMiner",
                 "thresholds": {
                     "offline": 15,
                     "lowhashrate": 2000,
