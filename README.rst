@@ -89,7 +89,7 @@ at least 5 minute adjust your configuration to look like this:
                 "type": "CGMiner"
                 "thresholds": {
                     "offline": 5,
-                    "emails": ['winston.com']
+                    "emails": ["winston.com"]
                 }
             }
         }
@@ -103,6 +103,7 @@ notified if my worker is offline for 15 minutes, goes below 2 MH/s, or rises
 above 85 C.
 
 .. code-block:: json
+
     [
         {"miner":
             {
@@ -111,7 +112,7 @@ above 85 C.
                     "offline": 15,
                     "lowhashrate": 2000,
                     "overheat": 85,
-                    "emails": ['winston.com', 'fred@simpledoge.com']
+                    "emails": ["winston.com", "fred@simpledoge.com"]
                 }
             }
         }
