@@ -51,6 +51,76 @@ to this:
     :height: 234
     :align: center
 
+Configuring Email Notifications
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ppagent has the ability to send you an email if your worker meets hits certain
+_thresholds_. This is configured per-worker in the ppagent configuration file.
+
+On **Linux**, the configuration file is in:
+
+.. code-block:: bash
+
+    /etc/ppagent/config.json
+    
+On **Windows** it will automatically look in the same folder as the executable, and it will be named ``ppagent.json``.
+
+Your default configuration file should look like this:
+
+.. code-block:: json
+
+    [
+        {"miner":
+            {
+                "type": "CGMiner"
+            }
+        }
+    ]
+
+The worker name will be automatically pulled from CGMiner, so there's no need
+to set it here. To recieve a notification when you're worker goes offline for
+at least 5 minute adjust your configuration to look like this:
+
+.. code-block:: json
+
+    [
+        {"miner":
+            {
+                "type": "CGMiner"
+                "thresholds": {
+                    "offline": 5,
+                    "emails": ['winston.com']
+                }
+            }
+        }
+    ]
+
+
+To detect overheat conditions on any of the cards, simply specify
+``"overheat"``. To report low hashrate conditions specify ``"lowhashrate"``
+with a number in KH/s. So with the below configuration myself and fred get
+notified if my worker is offline for 15 minutes, goes below 2 MH/s, or rises
+above 85 C.
+
+.. code-block:: json
+    [
+        {"miner":
+            {
+                "type": "CGMiner"
+                "thresholds": {
+                    "offline": 15,
+                    "lowhashrate": 2000,
+                    "overheat": 85,
+                    "emails": ['winston.com', 'fred@simpledoge.com']
+                }
+            }
+        }
+    ]
+
+By default you will also get notified when this condition is resolved (ie card
+no longer overheating), however this can be disabled by setting
+``"no_green_notif": true``. Also note that a maximum of 6 emails per hour will
+be automatically imposed to prevent repeated emailing.
 
 Upgrade
 ^^^^^^^^^^^^
@@ -126,26 +196,6 @@ Non-Standard Configurations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you're not running cgminer on the same computer as ppagent, or you're running on a non-standard port you'll have to tweak the configuration file a little bit.
-
-On **Linux**, the configuration file is in:
-
-.. code-block:: bash
-
-    /etc/ppagent/config.json
-    
-On **Windows** it will automatically look in the same folder as the executable, and it will be named ``ppagent.json``.
-
-Your default configuration file should look like this:
-
-.. code-block:: json
-
-    [
-        {"miner":
-            {
-                "type": "CGMiner"
-            }
-        }
-    ]
 
 However, this is automatically getting filled in with defaults. If all the defaults were defined here, they would look something like this:
 
