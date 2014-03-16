@@ -92,7 +92,9 @@ class CGMiner(Miner):
     keys = ['temps', 'hashrates']
     valid_collectors = ['status']
 
-    def __init__(self, collectors, remotes, port=4028, address='127.0.0.1'):
+    def __init__(self, collectors, remotes, thresholds=None, port=4028,
+                 address='127.0.0.1'):
+        self.thresholds = thresholds or {}
         self.port = port
         self.remotes = remotes
         self.address = address
@@ -104,12 +106,14 @@ class CGMiner(Miner):
         self.queue = []
         self.authenticated = False
         self.last_devs = []
+        self.sent_thresholds = False
 
     def reset(self):
         """ Called when connection to the miner is lost for some reason """
         self.last_devs = []
         self._worker = None
         self.authenticated = False
+        self.sent_thresholds = False
 
     def reset_timers(self):
         now = int(time.time())
@@ -126,8 +130,12 @@ class CGMiner(Miner):
     def collect(self):
         # trim queue to keep it from growing infinitely while disconnected
         self.queue = self.queue[:10]
-
         now = int(time.time())
+
+        if self.sent_thresholds is False:
+            self.queue.append([self.worker, 'thresholds', self.thresholds, now])
+            self.sent_thresholds = True
+
         # if it's time to run, and we have status defined
         if ('status' in self.collectors or
                 'temp' in self.collectors or
