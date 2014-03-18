@@ -11,7 +11,7 @@ import traceback
 from string import Template
 from os.path import expanduser
 
-version = '0.3.0'
+version = '0.3.1'
 
 logger = logging.getLogger("ppagent")
 config_home = expanduser("~/.ppagent/")
