@@ -51,8 +51,8 @@ to this:
     :height: 234
     :align: center
 
-Configuring Email Notifications
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Configuring Email (or Text) Notifications
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ppagent has the ability to send you an email if your worker meets hits certain
 **thresholds**. This is configured per-worker in the ppagent configuration file.
@@ -122,6 +122,19 @@ By default you will also get notified when this condition is resolved (ie card
 no longer overheating), however this can be disabled by setting
 ``"no_green_notif": true``. Also note that a maximum of 6 emails per hour will
 be automatically imposed to prevent repeated emailing.
+
+
+Text Messaging
+***************************
+
+While ppagent doesn't support direct text messaging, almost all wireless
+carriers now support email to text message services by emailing a special email
+address that your carrier provides. Alerts from ppagent monitoring are designed
+to fit in one text message length already.
+
+**A good list of email addresses and carriers `can be found here
+<http://www.emailtextmessages.com/>`_.**
+
 
 Upgrade
 ^^^^^^^^^^^^
