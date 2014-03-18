@@ -132,8 +132,7 @@ carriers now support email to text message services by emailing a special email
 address that your carrier provides. Alerts from ppagent monitoring are designed
 to fit in one text message length already.
 
-**A good list of email addresses and carriers `can be found here
-<http://www.emailtextmessages.com/>`_.**
+A good list of email addresses and carriers `can be found here <http://www.emailtextmessages.com>`_.
 
 
 Upgrade
