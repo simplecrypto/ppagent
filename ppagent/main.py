@@ -11,7 +11,7 @@ import traceback
 from string import Template
 from os.path import expanduser
 
-version = '0.3.1'
+version = '0.3.2'
 
 logger = logging.getLogger("ppagent")
 config_home = expanduser("~/.ppagent/")
@@ -361,7 +361,7 @@ class AgentSender(object):
                 # recieve, just wait till next loop to send
                 ret = self.recieve()
                 if ret is None or ret.get('error', True) is not None:
-                    logger.warn("Recieved failure result '{}' from the server!"
+                    logger.warn("Recieved failure result '{0}' from the server!"
                                 .format(ret))
                     break
                 farthest = i + 1
