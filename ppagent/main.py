@@ -172,7 +172,7 @@ class CGMiner(Miner):
             # set the next time it should run
             conf['next_run'] += conf['interval']
 
-        if 'hashrate' in self.collectors and now >= self.collectors['hashrate']['next_run']:
+        if mhs and 'hashrate' in self.collectors and now >= self.collectors['hashrate']['next_run']:
             conf = self.collectors['hashrate']
             self.queue.append([self.worker, 'hashrate', mhs, now])
 
@@ -227,7 +227,7 @@ class CGMiner(Miner):
             mhs = [round(now['Total MH'] - last['Total MH'], 3)
                    for now, last in zip(data['DEVS'], self.last_devs)]
         else:
-            mhs = [d['MHS 5s'] for d in data['DEVS']]
+            mhs = [d.get('MHS 5s') for d in data['DEVS'] if 'MHS 5s' in d]
         self.last_devs = data['DEVS']
         return mhs, temps, details
 
