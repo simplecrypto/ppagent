@@ -119,7 +119,7 @@ class CGMiner(Miner):
         now = int(time.time())
         for coll in self.collectors.values():
             interval = coll['interval']
-            coll['next_run'] = ((now // interval) * interval)
+            coll['next_run'] = ((now // interval) * interval) + interval
 
     @property
     def worker(self):
@@ -227,7 +227,7 @@ class CGMiner(Miner):
             mhs = [round(now['Total MH'] - last['Total MH'], 3)
                    for now, last in zip(data['DEVS'], self.last_devs)]
         else:
-            mhs = [d.get('MHS 5s') for d in data['DEVS'] if 'MHS 5s' in d]
+            mhs = []
         self.last_devs = data['DEVS']
         return mhs, temps, details
 
