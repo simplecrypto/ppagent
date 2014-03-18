@@ -55,9 +55,9 @@ Configuring Email Notifications
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ppagent has the ability to send you an email if your worker meets hits certain
-_thresholds_. This is configured per-worker in the ppagent configuration file.
+**thresholds**. This is configured per-worker in the ppagent configuration file.
 
-On **Linux**, the configuration file is in:
+On *Linux*, the configuration file is in:
 
 .. code-block:: bash
 
@@ -89,7 +89,7 @@ at least 5 minute adjust your configuration to look like this:
                 "type": "CGMiner",
                 "thresholds": {
                     "offline": 5,
-                    "emails": ["winston.com"]
+                    "emails": ["winston@simpledoge.com"]
                 }
             }
         }
@@ -112,7 +112,7 @@ above 85 C.
                     "offline": 15,
                     "lowhashrate": 2000,
                     "overheat": 85,
-                    "emails": ["winston.com", "fred@simpledoge.com"]
+                    "emails": ["winston@simpledoge.com", "fred@simpledoge.com"]
                 }
             }
         }
