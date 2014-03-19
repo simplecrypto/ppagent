@@ -41,7 +41,7 @@ class WorkerNotFound(Exception):
 
 
 def easy_exit(code=0):
-    """ A helper to prevent the window from closing rapidly on windows """
+    """ A helper to prevent the window from closing rapidly on Windows """
     if sys.platform == "win32":
         raw_input("Press any key to continue...")
     exit(code)
@@ -77,7 +77,7 @@ class Miner(object):
     but in the future other miners could be interfaced with. """
 
     def __init__(self):
-        """ Recieves a dictionary of arguments defined in the miner declaration
+        """ Receives a dictionary of arguments defined in the miner declaration
         """
         raise NotImplementedError
 
@@ -272,20 +272,20 @@ class AgentSender(object):
 
         return True
 
-    def recieve(self):
+    def receive(self):
         if self.conn is None:
             return {}
 
         try:
             recv = self.conn.readline(4096)
         except socket.error as e:
-            logger.debug("Failed to recieve response, connection error", exc_info=True)
+            logger.debug("Failed to receive response, connection error", exc_info=True)
             self.reset_connection()
             return {}
 
         if len(recv) > 4000:
             raise Exception("Server returned too large of a string")
-        logger.debug("Recieved response from server {0}".format(recv.strip()))
+        logger.debug("Received response from server {0}".format(recv.strip()))
         if not recv:
             self.reset_connection()
             return {}
@@ -324,7 +324,7 @@ class AgentSender(object):
                     time.sleep(5)
                     continue
 
-                retval = self.recieve()
+                retval = self.receive()
                 if retval.get('error', True) is None:
                     logger.debug("Successfully authenticated {0}".format(username))
                     miner.authenticated = True
@@ -351,17 +351,17 @@ class AgentSender(object):
             farthest = 0
             for i, value in enumerate(miner.queue):
                 send = {'method': 'stats.submit', 'params': value}
-                logger.info("Transmiting new stats: {0}".format(send))
+                logger.info("Transmitting new stats: {0}".format(send))
                 if not self.send(send):
                     logger.warn("Unable to send to remote, probably down temporarily.")
                     time.sleep(5)
                     break
 
                 # try to get a response from the server. if we fail to
-                # recieve, just wait till next loop to send
-                ret = self.recieve()
+                # receive, just wait till next loop to send
+                ret = self.receive()
                 if ret is None or ret.get('error', True) is not None:
-                    logger.warn("Recieved failure result '{0}' from the server!"
+                    logger.warn("Received failure result '{0}' from the server!"
                                 .format(ret))
                     break
                 farthest = i + 1

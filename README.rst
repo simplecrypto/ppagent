@@ -78,7 +78,7 @@ Your default configuration file should look like this:
     ]
 
 The worker name will be automatically pulled from CGMiner, so there's no need
-to set it here. To recieve a notification when you're worker goes offline for
+to set it here. To receive a notification when you're worker goes offline for
 at least 5 minute adjust your configuration to look like this:
 
 .. code-block:: json
