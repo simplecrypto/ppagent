@@ -11,7 +11,7 @@ import traceback
 from string import Template
 from os.path import expanduser
 
-version = '0.3.3'
+version = '0.3.4'
 
 logger = logging.getLogger("ppagent")
 config_home = expanduser("~/.ppagent/")
@@ -136,19 +136,19 @@ class CGMiner(Miner):
             self.queue.append([self.worker, 'thresholds', self.thresholds, now])
             self.sent_thresholds = True
 
+        mhs = []
         # if it's time to run, and we have status defined
         if ('status' in self.collectors or
-                'temp' in self.collectors or
-                'hashrate' in self.collectors):
-            ret = self.call_devs()
-            mhs, temps, details = ret
+            'temp' in self.collectors or
+            'hashrate' in self.collectors) and now >= self.collectors['status']['next_run']:
+            mhs, temps, details = self.call_devs()
 
         if 'status' in self.collectors and now >= self.collectors['status']['next_run']:
             conf = self.collectors['status']
             gpus = [{} for _ in temps]
             output = {"type": "cgminer", "gpus": gpus, "pool": self.pool_stat()}
             # if it failed to connect we should just skip collection
-            if ret is None:
+            if details is None:
                 return
             if conf['temperature']:
                 for i, temp in enumerate(temps):
@@ -224,10 +224,12 @@ class CGMiner(Miner):
         # difference since last run, as opposed to reporting cgminers avg
         # megahash or 5s megahash
         if self.last_devs and len(self.last_devs) == len(data['DEVS']):
-            mhs = [round(now['Total MH'] - last['Total MH'], 3)
+            diff = time.time() - self._last_dev
+            mhs = [round((now['Total MH'] - last['Total MH']) / diff, 3)
                    for now, last in zip(data['DEVS'], self.last_devs)]
         else:
             mhs = []
+        self._last_dev = time.time()
         self.last_devs = data['DEVS']
         return mhs, temps, details
 
