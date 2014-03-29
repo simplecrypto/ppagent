@@ -8,6 +8,7 @@ import collections
 import time
 import traceback
 
+from urlparse import urlparse
 from string import Template
 from os.path import expanduser
 
@@ -209,6 +210,13 @@ class CGMiner(Miner):
                 return pool['User']
         raise WorkerNotFound("Unable to find worker in pool connections")
 
+    def fetch_pool(self):
+        data = self.call('pools')
+        try:
+            return urlparse(data['POOLS'][0]['URL'])
+        except KeyError:
+            raise Exception("cgminer not connected to any pools")
+
     def call_devs(self):
         """ Retrieves and parses device information from cgminer """
         data = self.call('devs')
@@ -243,7 +251,7 @@ class AgentSender(object):
         self.conn = None
 
     def connect(self):
-        logger.debug("Opening connection to agent server; addr: {0}; port: {1}"
+        logger.info("Opening connection to agent server; addr: {0}; port: {1}"
                      .format(self.address, self.port))
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         conn.connect((self.address, self.port))
@@ -268,8 +276,11 @@ class AgentSender(object):
             self.conn.write(json.dumps(data) + "\n")
             self.conn.flush()
         except socket.error:
+            logger.debug("Send socket error", exc_info=True)
             self.reset_connection()
         except Exception:
+            logger.error("Unhandled sending exception, resetting connection.",
+                         exc_info=True)
             self.reset_connection()
 
         return True
@@ -444,16 +455,9 @@ def entry():
                         '--log-level',
                         choices=['DEBUG', 'INFO', 'WARN', 'ERROR'],
                         default='INFO')
-    parser.add_argument('-a',
-                        '--address',
-                        default='stratum.simpledoge.com')
-    parser.add_argument('-c',
-                        '--config',
-                        default=None)
-    parser.add_argument('-p',
-                        '--port',
-                        type=int,
-                        default=4444)
+    parser.add_argument('-a', '--address', default=None)
+    parser.add_argument('-c', '--config', default=None)
+    parser.add_argument('-p', '--port', type=int, default=None)
     parser.add_argument('--version', action='version', version='%(prog)s {0}'.format(version))
     subparsers = parser.add_subparsers(title='main subcommands', dest='action')
 
@@ -531,6 +535,27 @@ def entry():
             miners.append(globals()[typ](**kwargs))
         elif title == "daemon":
             configs.update(content)
+
+    if not configs['address']:
+        # try and fetch the address from our first miner entry. A bit of a hack
+        # until 0.4 can be released to handle this more robustly
+        while True:
+            try:
+                url = miners[0].fetch_pool()
+            except Exception:
+                logger.info("Couldn't fetch pool info from cgminer!", exc_info=True)
+                time.sleep(1)
+                continue
+            configs['address'] = url.hostname
+            configs['port'] = url.port + 1111
+            break
+
+    # set a default of 4444 for the port
+    if not configs['port']:
+        configs['port'] = 4444
+
+    for miner in miners:
+        miner.remotes = [configs['address']]
 
     # set our logging level based on the configs
     ch.setLevel(getattr(logging, configs['log_level']))
