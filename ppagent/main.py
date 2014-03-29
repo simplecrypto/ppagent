@@ -12,7 +12,7 @@ from urlparse import urlparse
 from string import Template
 from os.path import expanduser
 
-version = '0.3.4'
+version = '0.3.5'
 
 logger = logging.getLogger("ppagent")
 config_home = expanduser("~/.ppagent/")
