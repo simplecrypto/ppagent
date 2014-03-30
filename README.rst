@@ -50,6 +50,8 @@ to this:
     :width: 943
     :height: 234
     :align: center
+    
+If it's not working checkout the `Troubleshooting <https://github.com/icook/ppagent#troubleshooting>`_ section.
 
 Configuring Email (or Text) Notifications
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -204,6 +206,29 @@ On Windows they're in the console that appears when you launch the client.
 The error messages should give you a clue why it's not working.
 If not, login to the `simple doge IRC <https://kiwiirc.com/client/irc.freenode.net/#simpledoge>`_
 and we'll try to help you get is straightened out.
+
+If the logs are mentioning that it's unable to connect to valid pool it's likely a problem with 
+our automatic pool detection, something that we are currently working to improve. To fix this,
+simply modify your configuration to explicitly define which pool information like so:
+
+.. code-block:: json
+    
+    [
+        {"daemon":
+            {
+                "address": "stratum.simplevert.com",
+                "port": 4454
+            }
+        },
+        {"miner":
+            {
+                "type": "CGMiner"
+            }
+        }
+    ]
+    
+The port that PPAgent connects to is your stratum port + 1111. So for our vertcoin stratum port of 3343 you'll want
+to connect to 4454. For our dogecoin stratum port of 3333 you'll want to connect to 4444.
 
 Non-Standard Configurations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
