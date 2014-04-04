@@ -5,6 +5,17 @@ work with `Simple Doge mining pool <http://simpledoge.com>`_ . Runs on Windows,
 Ubuntu Linux and Debian Linux. Tested on cgminer 3.7.2 sgminer 4.1.0 and vertminer 0.5.3,
 should also work on other derivatives.
 
+Table of Contents
+^^^^^^^^^^^^^^^^^
+
+* `Installation <#installation>`_
+* `Configuring Email (or Text) Notifications <#configuring-email-or-text-notifications>`_
+* `Upgrading <#upgrading>`_
+* `Troubleshooting <#troubleshooting>`_
+
+* `Non-Standard Configurations <#non-standard-configurations>`_
+
+
 Installation
 ^^^^^^^^^^^^
 Make sure your cgminer or sgminer is running with the api port enabled. ThiFs
@@ -137,7 +148,7 @@ to fit in one text message length already.
 A good list of email addresses and carriers `can be found here <http://www.emailtextmessages.com>`_.
 
 
-Upgrade
+Upgrading
 ^^^^^^^^^^^^
 
 Ubuntu:
@@ -299,3 +310,24 @@ Or if you wanted to report the status of two different cgminer instances
     ]
 
 Both miners will be assumed to be running locally, but that too can be overriden by specifying a non-default ``"address"`` value.
+
+Uninstalling
+^^^^^^^^^^^^
+
+On windows it never was installed, so simply delete the exe.
+
+On Ubuntu:
+
+.. code-block:: bash
+
+    sudo pip uninstall ppagent
+    sudo rm -rf /etc/ppagent
+    sudo rm /etc/init/ppagent.conf
+
+On Linux Debian (SMOS or BAMT):
+
+.. code-block:: bash
+
+    sudo pip uninstall ppagent
+    sudo rm -rf /etc/ppagent
+    sudo rm /etc/init.d/ppagent
