@@ -34,7 +34,7 @@ ppagent will now start with your computer automatically.
 
 Windows:
 **************************
-#. `Download latest exe <https://github.com/icook/ppagent/releases/download/v0.3.5/ppagent.exe>`_.
+#. `Download latest exe <https://github.com/simplecrypto/ppagent/releases/download/v0.3.5/ppagent.exe>`_.
 #. Run the binary when connected to stratum.simpledoge.com and status will be automatically reported.
 
 To make ppagent start on boot, `see this post <http://superuser.com/questions/63326/enable-exe-to-run-at-startup>`_.
@@ -56,13 +56,13 @@ automatically start sending statistics to the server as well. Check your stats
 page on SimpleDoge to see that it's working. You should see something similar
 to this:
 
-.. image:: https://github.com/icook/ppagent/raw/master/doc/worker_stat.png
+.. image:: https://github.com/simplecrypto/ppagent/raw/master/doc/worker_stat.png
     :alt: Worker status display
     :width: 943
     :height: 234
     :align: center
     
-If it's not working checkout the `Troubleshooting <https://github.com/icook/ppagent#troubleshooting>`_ section.
+If it's not working checkout the `Troubleshooting <https://github.com/simplecrypto/ppagent#troubleshooting>`_ section.
 
 Configuring Email (or Text) Notifications
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -172,7 +172,7 @@ Debian (for BAMT or SMOS):
 
 Windows:
 
-Simply `Download latest exe <https://github.com/icook/ppagent/releases/download/v0.3.5/ppagent.exe>`_ and replace your old one.
+Simply `Download latest exe <https://github.com/simplecrypto/ppagent/releases/download/v0.3.5/ppagent.exe>`_ and replace your old one.
 
 Troubleshooting Upgrade
 ***************************
