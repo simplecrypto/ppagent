@@ -1,7 +1,7 @@
 PowerPool Agent
 ===============
 A statistics collection agent for the PowerPool mining server. It was built to
-work with `Simple Doge mining pool <http://simpledoge.com>`_ . Runs on Windows,
+work with `Simple Doge (and Simple Vert) mining pool <http://simpledoge.com>`_ . Runs on Windows,
 Ubuntu Linux and Debian Linux. Tested on cgminer 3.7.2 sgminer 4.1.0 and vertminer 0.5.3,
 should also work on other derivatives.
 
