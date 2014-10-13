@@ -48,8 +48,26 @@ def easy_exit(code=0):
     exit(code)
 
 
-miner_defaults = {
-    'CGMiner': {
+class Miner(object):
+    """ Represents one mining client. Currently only implementation is CGMiner,
+    but in the future other miners could be interfaced with. """
+
+    def __init__(self):
+        """ Receives a dictionary of arguments defined in the miner declaration
+        """
+        raise NotImplementedError
+
+    def collect(self):
+        """ Called at regular intervals to collect information. Should return a
+        list of dictionaries that get passed serialized to pass to the
+        powerpool collector. Should manage it's only scheduling. """
+        raise NotImplementedError
+
+
+class CGMiner(Miner):
+    keys = ['temps', 'hashrates']
+    valid_collectors = ['status']
+    defaults = {
         'port': 4028,
         'address': '127.0.0.1',
         'collectors': {
@@ -70,28 +88,6 @@ miner_defaults = {
             }
         }
     }
-}
-
-
-class Miner(object):
-    """ Represents one mining client. Currently only implementation is CGMiner,
-    but in the future other miners could be interfaced with. """
-
-    def __init__(self):
-        """ Receives a dictionary of arguments defined in the miner declaration
-        """
-        raise NotImplementedError
-
-    def collect(self):
-        """ Called at regular intervals to collect information. Should return a
-        list of dictionaries that get passed serialized to pass to the
-        powerpool collector. Should manage it's only scheduling. """
-        raise NotImplementedError
-
-
-class CGMiner(Miner):
-    keys = ['temps', 'hashrates']
-    valid_collectors = ['status']
 
     def __init__(self, collectors, remotes, thresholds=None, port=4028,
                  address='127.0.0.1'):
@@ -240,6 +236,25 @@ class CGMiner(Miner):
         self._last_dev = time.time()
         self.last_devs = data['DEVS']
         return mhs, temps, details
+
+
+class MockCGMiner(CGMiner):
+    def collect(self):
+        now = int(time.time())
+        self.queue.append([self.worker, 'temp', [12, 15, 18], now])
+        self.queue.append([self.worker, 'hashrate', [12, 15, 18], now])
+        self.queue.append([self.worker, 'status', {"test": "other"}, now])
+
+    def call(self, command, params=None):
+        if command == "devs":
+            return json.loads('{"gpus": [{"Difficulty Accepted": 410112.0, "Difficulty Rejected": 512.0, "GPU Voltage": 1.2, "GPU Clock": 1070, "Fan Speed": 2482, "GPU Activity": 99, "Status": "Alive", "Device Rejected%": 0.1247, "Fan Percent": 100, "Rejected": 2, "Memory Clock": 1500, "Hardware Errors": 0, "Accepted": 1492, "Last Share Pool": 0, "Diff1 Work": 410653, "hash": 0.381, "Total MH": 28107.5384, "Enabled": "Y", "Device Elapsed": 73201, "Device Hardware%": 0.0, "Last Valid Work": 1409019675, "Last Share Time": 1409019675, "GPU": 0, "MHS av": 0.38, "MHS 5s": 0.38, "temp": 66.0, "Last Share Difficulty": 256.0, "Intensity": "0", "Powertune": -20, "Utility": 1.22}, {"Difficulty Accepted": 425728.0, "Difficulty Rejected": 1536.0, "GPU Voltage": 1.2, "GPU Clock": 1070, "Fan Speed": 2847, "GPU Activity": 99, "Status": "Alive", "Device Rejected%": 0.3579, "Fan Percent": 100, "Rejected": 6, "Memory Clock": 1500, "Hardware Errors": 0, "Accepted": 1573, "Last Share Pool": 0, "Diff1 Work": 429141, "hash": 0.384, "Total MH": 28105.474, "Enabled": "Y", "Device Elapsed": 73201, "Device Hardware%": 0.0, "Last Valid Work": 1409019755, "Last Share Time": 1409019755, "GPU": 1, "MHS av": 0.38, "MHS 5s": 0.38, "temp": 48.0, "Last Share Difficulty": 256.0, "Intensity": "0", "Powertune": -20, "Utility": 1.29}, {"Difficulty Accepted": 440320.0, "Difficulty Rejected": 512.0, "GPU Voltage": 1.2, "GPU Clock": 1070, "Fan Speed": 2965, "GPU Activity": 99, "Status": "Alive", "Device Rejected%": 0.1163, "Fan Percent": 100, "Rejected": 2, "Memory Clock": 1500, "Hardware Errors": 0, "Accepted": 1609, "Last Share Pool": 0, "Diff1 Work": 440053, "hash": 0.381, "Total MH": 28103.2376, "Enabled": "Y", "Device Elapsed": 73201, "Device Hardware%": 0.0, "Last Valid Work": 1409019735, "Last Share Time": 1409019736, "GPU": 2, "MHS av": 0.38, "MHS 5s": 0.38, "temp": 55.0, "Last Share Difficulty": 256.0, "Intensity": "0", "Powertune": -20, "Utility": 1.32}, {"Difficulty Accepted": 423168.0, "Difficulty Rejected": 1280.0, "GPU Voltage": 1.2, "GPU Clock": 1070, "Fan Speed": 2980, "GPU Activity": 99, "Status": "Alive", "Device Rejected%": 0.3007, "Fan Percent": 100, "Rejected": 5, "Memory Clock": 1500, "Hardware Errors": 0, "Accepted": 1539, "Last Share Pool": 0, "Diff1 Work": 425739, "hash": 0.381, "Total MH": 28010.2666, "Enabled": "Y", "Device Elapsed": 73201, "Device Hardware%": 0.0, "Last Valid Work": 1409019750, "Last Share Time": 1409019750, "GPU": 3, "MHS av": 0.38, "MHS 5s": 0.38, "temp": 58.0, "Last Share Difficulty": 256.0, "Intensity": "0", "Powertune": -20, "Utility": 1.26}, {"Difficulty Accepted": 436096.0, "Difficulty Rejected": 0.0, "GPU Voltage": 1.2, "GPU Clock": 1070, "Fan Speed": 2990, "GPU Activity": 99, "Status": "Alive", "Device Rejected%": 0.0, "Fan Percent": 100, "Rejected": 0, "Memory Clock": 1500, "Hardware Errors": 0, "Accepted": 1580, "Last Share Pool": 0, "Diff1 Work": 434616, "hash": 0.381, "Total MH": 28105.5478, "Enabled": "Y", "Device Elapsed": 73201, "Device Hardware%": 0.0, "Last Valid Work": 1409019757, "Last Share Time": 1409019757, "GPU": 4, "MHS av": 0.38, "MHS 5s": 0.38, "temp": 56.0, "Last Share Difficulty": 256.0, "Intensity": "0", "Powertune": -20, "Utility": 1.3}, {"Difficulty Accepted": 438912.0, "Difficulty Rejected": 768.0, "GPU Voltage": 1.2, "GPU Clock": 1070, "Fan Speed": 2889, "GPU Activity": 99, "Status": "Alive", "Device Rejected%": 0.1745, "Fan Percent": 100, "Rejected": 3, "Memory Clock": 1500, "Hardware Errors": 0, "Accepted": 1617, "Last Share Pool": 0, "Diff1 Work": 440188, "hash": 0.381, "Total MH": 28105.8263, "Enabled": "Y", "Device Elapsed": 73201, "Device Hardware%": 0.0, "Last Valid Work": 1409019619, "Last Share Time": 1409019619, "GPU": 5, "MHS av": 0.38, "MHS 5s": 0.38, "temp": 64.0, "Last Share Difficulty": 256.0, "Intensity": "0", "Powertune": -20, "Utility": 1.33}], "type": "cgminer", "pool": {"Stratum Active": true, "Difficulty Accepted": 2574336.0, "Pool Rejected%": 0.1786, "Difficulty Rejected": 4608.0, "Diff1 Shares": 2580390, "Status": "Alive", "Proxy Type": "", "Last Share Difficulty": 256.0, "Pool Stale%": 0.0694, "Quota": 1, "Rejected": 18, "Stratum URL": "stratum.simplevert.com", "User": "VbRS1xjKP3nEvV7uC1NbECkzW8kTdVP63J.Kev1n2", "Long Poll": "N", "Accepted": 9410, "Proxy": "", "Get Failures": 0, "Difficulty Stale": 1792.0, "URL": "stratum+tcp://stratum.simplevert.com:3344", "Discarded": 6985, "Has Stratum": true, "Last Share Time": 1409019757, "Stale": 6, "Works": 171292, "POOL": 0, "Priority": 0, "Getworks": 3570, "Has GBT": false, "Best Share": 19970948, "Remote Failures": 0}, "v": "0.3.5"}')
+        elif command == "pools":
+            data = {"POOLS": [
+                {"Stratum URL": "localhost",
+                 "URL": "stratum+tcp://localhost:3333",
+                 "User": "testing"}
+            ]}
+            return data
 
 
 class AgentSender(object):
@@ -525,14 +540,14 @@ def entry():
         content = section.values()[0]
         # process a miner directive
         if title == "miner":
-            typ = content.pop('type', 'CGMiner')
+            typ = globals()[content.pop('type', 'CGMiner')]
             kwargs = {}
             # apply defaults, followed by overriding with config options
-            update(kwargs, miner_defaults[typ])
+            update(kwargs, typ.defaults)
             update(kwargs, content)
             kwargs['remotes'] = [configs['address']]
             # init the miner class with the configs
-            miners.append(globals()[typ](**kwargs))
+            miners.append(typ(**kwargs))
         elif title == "daemon":
             configs.update(content)
 
