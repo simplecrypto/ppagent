@@ -1,7 +1,7 @@
 PowerPool Agent
 ===============
 A statistics collection agent for the PowerPool mining server. It was built to
-work with `Simple Doge (and Simple Vert) mining pool <http://simpledoge.com>`_ . Runs on Windows,
+work with `Simple Multi <http://simplemulti.com>`_ . Runs on Windows,
 Ubuntu Linux and Debian Linux. Tested on cgminer 3.7.2 sgminer 4.1.0 and vertminer 0.5.3,
 should also work on other derivatives.
 
@@ -12,7 +12,6 @@ Table of Contents
 * `Configuring Email (or Text) Notifications <#configuring-email-or-text-notifications>`_
 * `Upgrading <#upgrading>`_
 * `Troubleshooting <#troubleshooting>`_
-
 * `Non-Standard Configurations <#non-standard-configurations>`_
 
 
@@ -35,7 +34,7 @@ ppagent will now start with your computer automatically.
 Windows:
 **************************
 #. `Download latest exe <https://github.com/simplecrypto/ppagent/releases/download/v0.3.5/ppagent.exe>`_.
-#. Run the binary when connected to stratum.simpledoge.com and status will be automatically reported.
+#. Run the binary when connected to stratum.simplemulti.com and status will be automatically reported.
 
 To make ppagent start on boot, `see this post <http://superuser.com/questions/63326/enable-exe-to-run-at-startup>`_.
     
@@ -51,9 +50,9 @@ ppagent will now start with your computer automatically.
     
 ======================================================================
 
-Now when your miner is running against stratum.simpledoge.com the daemon will
+Now when your miner is running against stratum.simplemulti.com the daemon will
 automatically start sending statistics to the server as well. Check your stats
-page on SimpleDoge to see that it's working. You should see something similar
+page on Simple Multi to see that it's working. You should see something similar
 to this:
 
 .. image:: https://github.com/simplecrypto/ppagent/raw/master/doc/worker_stat.png
@@ -67,8 +66,8 @@ If it's not working checkout the `Troubleshooting <https://github.com/simplecryp
 Configuring Email (or Text) Notifications (Deprecated)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-** NOTE: This is now deprecated with the upgrade to SimpleMulti. A similar
-feature will be available via message signing in the future. **
+NOTE: This is now deprecated with the upgrade to SimpleMulti. A similar feature will be available via message signing in the future.
+------------------------------------------------------------------------------------------------------------------------------------
 
 ppagent has the ability to send you an email if your worker meets hits certain
 **thresholds**. This is configured per-worker in the ppagent configuration file.
@@ -106,7 +105,7 @@ at least 5 minute adjust your configuration to look like this:
                 "type": "CGMiner",
                 "thresholds": {
                     "offline": 5,
-                    "emails": ["winston@simpledoge.com"]
+                    "emails": ["winston@simplemulti.com"]
                 }
             }
         }
@@ -129,7 +128,7 @@ above 85 C.
                     "offline": 15,
                     "lowhashrate": 2000,
                     "overheat": 85,
-                    "emails": ["winston@simpledoge.com", "fred@simpledoge.com"]
+                    "emails": ["winston@simplemulti.com", "fred@simplemulti.com"]
                 }
             }
         }
@@ -197,7 +196,7 @@ remove you're configuration files.
     sudo pip install ppagent
 
 If you still can't get it you're welcome to come bug us on `IRC
-<https://kiwiirc.com/client/irc.freenode.net/#simpledoge>`_, we're usually on
+<https://kiwiirc.com/client/irc.freenode.net/#simplecrypto>`_, we're usually on
 during the day.
     
 Troubleshooting
@@ -219,7 +218,7 @@ On Ubuntu:
 On Windows they're in the console that appears when you launch the client.
     
 The error messages should give you a clue why it's not working.
-If not, login to the `simple doge IRC <https://kiwiirc.com/client/irc.freenode.net/#simpledoge>`_
+If not, login to the `simplecrypto IRC <https://kiwiirc.com/client/irc.freenode.net/#simplecrypto>`_
 and we'll try to help you get is straightened out.
 
 If the logs are mentioning that it's unable to connect to valid pool it's likely a problem with 
