@@ -64,19 +64,23 @@ to this:
     
 If it's not working checkout the `Troubleshooting <https://github.com/simplecrypto/ppagent#troubleshooting>`_ section.
 
-Configuring Email (or Text) Notifications
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Configuring Email (or Text) Notifications (Deprecated)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+** NOTE: This is now deprecated with the upgrade to SimpleMulti. A similar
+feature will be available via message signing in the future. **
 
 ppagent has the ability to send you an email if your worker meets hits certain
 **thresholds**. This is configured per-worker in the ppagent configuration file.
 
-On *Linux*, the configuration file is in:
+On **Linux**, the configuration file is in:
 
 .. code-block:: bash
 
     /etc/ppagent/config.json
     
-On **Windows** it will automatically look in the same folder as the executable, and it will be named ``ppagent.json``.
+On **Windows** it will automatically look in the same folder as the executable,
+and it will be named ``ppagent.json``.
 
 Your default configuration file should look like this:
 
